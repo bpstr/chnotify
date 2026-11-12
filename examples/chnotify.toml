@@ -1,0 +1,77 @@
+# Proposed configuration; the Rust implementation does not exist yet.
+# Paths are relative to this configuration file.
+# Each accepted notification goes to every configured channel.
+# Bindings/profile versions will be pinned to the dedicated schema repository.
+
+[daemon]
+socket = "../runtime/chnotify.sock"
+max_message_bytes = 65536
+max_clients = 32
+accept_timeout_ms = 2048
+
+[outbox]
+path = "../state/outbox.sqlite3"
+durability = "full"
+max_pending_events = 65536
+max_pending_payload_bytes = 67108864
+max_total_storage_bytes = 134217728
+# Total storage includes DB/WAL/indexes/tombstones; reserve completion headroom.
+overflow = "reject"
+dedup_retention_seconds = 86400
+
+[delivery]
+max_concurrent = 8
+max_per_channel = 1
+initial_backoff_ms = 256
+max_backoff_ms = 65536
+# Retry-After may extend beyond this local backoff cap.
+jitter = true
+
+[[channels]]
+id = "local-monitor"
+adapter = "unix"
+path = "../runtime/test-receiver.sock"
+socket_type = "stream"
+format = "tsv"
+framing = "length-prefix"
+acknowledgement = "receiver"
+replay = "deduplicate"
+request_timeout_ms = 8192
+
+[[channels]]
+id = "web-monitor"
+adapter = "http"
+url = "http://127.0.0.1:8080/notifications"
+format = "json"
+acknowledgement = "response"
+accepted_statuses = [204]
+# Receiver must actually honor the agreed header and deduplication contract.
+replay = "deduplicate"
+idempotency_header = "Idempotency-Key"
+connect_timeout_ms = 2048
+request_timeout_ms = 8192
+follow_redirects = false
+
+[channels.auth]
+type = "bearer"
+token_env = "CHNOTIFY_TEST_TOKEN"
+# Configure test-only credentials in the receiver.
+# Use HTTPS with verified certificates for a remote web endpoint.
+
+[[channels]]
+id = "local-log"
+adapter = "file"
+path = "../logs/notifications.log"
+# Payload codec and log record format are independent:
+format = "toml"
+record_format = "rfc5424"
+# Alternative log envelope: record_format = "jsonl"
+acknowledgement = "durable-append"
+sync = "each-record"
+replay = "allow-duplicates"
+mode = "0600"
+max_record_bytes = 524288
+max_file_bytes = 67108864
+rotation = "external-reopen"
+# Rename/create externally, then signal SIGHUP to reopen; no copytruncate.
+# Rotated-log retention is configured in the external rotation tool.
