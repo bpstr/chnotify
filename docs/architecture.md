@@ -21,7 +21,7 @@ The first acceptance environment is Linux. Portable Rust boundaries should leave
 | Contract | Owner | Responsibility |
 |---|---|---|
 | Notification schema | Dedicated specification repository | Fields, meaning, lexical types, required values, versioning, extensions, format bindings and conformance fixtures |
-| Codec | chnotify, implementing those bindings | Decode and encode one notification without changing its meaning |
+| Codec | chnotify, implementing those bindings | Encode/decode TSV, YAML, JSON, JSONL, TOML or key/value text without changing meaning |
 | Local submission protocol | chnotify | Framing, event identity, admission errors and durable acceptance |
 | Channel adapter | chnotify | Endpoint connection, authentication, transmission and acknowledgement interpretation |
 | Delivery engine | chnotify | Routing snapshot, durable outbox, limits, scheduling, retry state and recovery |
@@ -43,8 +43,10 @@ flowchart TD
     O --> D["Delivery scheduler"]
     D --> S["Socket adapter"]
     D --> H["HTTP adapter"]
+    D --> F["File adapter"]
     S --> SR["Socket receiver"]
     H --> HR["Web endpoint"]
+    F --> FR["Append-only log"]
 ~~~
 
 For each new submission:
@@ -88,7 +90,7 @@ Unix datagrams preserve message boundaries; streams require framing. [S2] Length
 
 Propose a deliberately small first schema profile: a flat map from field names to UTF-8 strings. The specification repository owns the final decision and the lexical rules for numeric or boolean-like values.
 
-For that profile, `"0008"`, `"8"`, an empty string, and an absent field remain distinct. JSON/YAML emit string scalars; a codec must not infer types from appearances. If a future schema needs nested or typed data, introduce versioned bindings together.
+For that profile, `"0008"`, `"8"`, an empty string, and an absent field remain distinct. JSON/YAML/TOML emit string scalars; a codec must not infer types from appearances. If a future schema needs nested or typed data, introduce versioned bindings together.
 
 | Codec | One-notification representation | Boundary |
 |---|---|---|
@@ -97,10 +99,15 @@ For that profile, `"0008"`, `"8"`, an empty string, and an absent field remain d
 | JSONL | One compact JSON object followed by LF | Line record inside the selected transport |
 | YAML | One restricted YAML 1.2 mapping document | One frame or HTTP body |
 | TSV | Defined two-column field/value profile with a header | One frame or HTTP body |
+| TOML | One document with root-level string-valued keys | One frame or HTTP body |
+
+All five required codecs also work as payloads inside a file log record. The file adapter applies its own record envelope and escaping; multiline documents are never appended as an unframed stream.
 
 For TSV, propose a `key<TAB>value` header followed by one row per field. Define the profile's escaping for backslash, tab, LF, CR, and empty values, and require a round trip. The historical TSV registration specifies a header and consistent columns and excludes literal tabs in a field; escaping and empty-value handling therefore need an explicit profile. [S3]
 
 For YAML, reject duplicate keys, aliases, custom tags, nested collections, and unsupported scalar forms under this profile. Quote generated string values. YAML has a broader data model than the proposed notification profile. [S4]
+
+For TOML, use the TOML 1.1 syntax with a restricted root-level string-map profile; generated documents can stay within the common TOML 1.0-compatible scalar subset. Reject duplicate keys, nested tables, arrays, and non-string values under this profile. Quote literal field names where necessary so dots do not create nested tables, and preserve empty strings and numeric-looking strings. Pin the accepted syntax and profile in the shared fixtures. TOML distinguishes native value types and assigns structure to dotted keys, so the codec must apply explicit schema rules. [S10]
 
 JSONL reuses the JSON codec; it is not a separate semantic schema. Its convention is one JSON value per line. [S5] The HTTP adapter sends one event per request initially, including for JSONL; batch delivery can wait.
 
@@ -154,6 +161,14 @@ A receiver supporting durable replay must deduplicate the stable delivery ID, ca
 
 Require an explicit replay contract for automatic ambiguous retries: receiver deduplication or a receiver where repeated notifications are safe. Otherwise retain an uncertain outcome for inspection.
 
+### Log file
+
+Add a built-in `file` adapter that appends notification records to a dedicated local file. Its default `record_format = "rfc5424"` uses RFC 5424 message syntax with one escaped record per physical line. Optional `record_format = "jsonl"` writes a structured JSONL envelope. The payload `format`, including TOML, is independent of that envelope.
+
+Records preserve a fixed acceptance timestamp, stable event/delivery IDs, source metadata, the schema/profile reference, and the encoded payload. Build and freeze the bounded record bytes before acceptance. File completion requires a full append and successful storage synchronization; appending and recording outbox completion are separate operations, so replay can produce identifiable duplicate records.
+
+Use one locked writer, bounded tail recovery, an active-file size ceiling, and external rename-and-reopen rotation. Keep failed file deliveries queued while other channels continue. The exact record profile, durability sequence, and rotation contract are specified in [File log destination](file-channel.md).
+
 ## 8. Durable outbox and recovery
 
 Use embedded SQLite as the first storage implementation: one serialized writer, a bounded cache, indexed pending deliveries and no external database process. A custom spool would need its own tested atomic updates, crash recovery and compaction.
@@ -163,7 +178,7 @@ Use WAL with `synchronous=FULL` for the durable-acceptance mode. SQLite document
 Store:
 
 - Stable event identity, local producer identity, normalized content digest and acceptance order.
-- Immutable encoded payloads and their profile/codec versions.
+- Immutable encoded payloads and their profile/codec versions; file destinations also freeze their complete record envelopes.
 - A destination snapshot for each selected channel.
 - Per-destination state, attempts, next retry, and bounded diagnostic information.
 - Completion tombstones for the advertised admission-deduplication window.
@@ -205,13 +220,15 @@ Suggested HTTP classifications, subject to the receiver's contract:
 | Timeout after possible acceptance | Replay the same delivery ID only under a replay-safe contract; otherwise retain uncertainty |
 | Redirect | Block for explicit endpoint review |
 
+The built-in file adapter explicitly uses `replay = "allow-duplicates"`: repeated complete log records are permitted, with their original delivery ID and frozen bytes. It does not claim receiver deduplication.
+
 Delivery is persistent retry with at-least-once attempts where replay is enabled. Exactly-once external effects require receiver cooperation and are not a generic adapter guarantee. Delivery can remain blocked indefinitely if the endpoint never recovers.
 
 ## 10. Resource use and operation
 
 Use a current-thread asynchronous runtime for socket and HTTP I/O, plus a small bounded path for blocking persistence work. Tokio supports a current-thread executor; its default multithreaded runtime otherwise starts workers according to available CPU cores. [S9]
 
-A single database worker is a reasonable initial choice. Do not perform blocking disk writes or fsync on the I/O thread. Account separately for DNS, TLS, database and library-created threads when measuring the build.
+A single database worker is a reasonable initial choice. Do not perform blocking database or log-file writes, fsync, or tail repair on the I/O thread. Route both through bounded blocking work; avoid creating a thread per file channel. Account separately for DNS, TLS, database and library-created threads when measuring the build.
 
 The idle contract is:
 
@@ -222,6 +239,8 @@ The idle contract is:
 - Load only configured adapters and keep the backlog on disk.
 - Log bounded state changes and failures rather than every successful event by default.
 
+Keep log-file disk usage separate from the outbox quota. Enforce the active-file ceiling and use external retention for rotated logs; reaching the ceiling blocks that channel without dropping queued notifications.
+
 Measure idle RSS/PSS, CPU time, wakeups, open files, binary size, submission latency and recovery behavior. Report socket-only, HTTPS-initialized and backlog cases separately. No memory figure or literal zero-footprint claim is established until a real implementation is benchmarked.
 
 On shutdown, stop admission, finish or reject already-received admissions, record completed deliveries and exit within a bounded deadline. Accepted pending work remains on disk. Avoid waiting indefinitely for an unavailable web endpoint.
@@ -230,9 +249,9 @@ Provide `check` for configuration validation and local `outbox list/retry/drop` 
 
 ## 11. Configuration model
 
-Use TOML for daemon configuration; configuration format and payload format are independent. See [the proposed example](../examples/chnotify.toml).
+Use TOML for daemon configuration; configuration format, notification payload codec, and file log record format are independent. See [the proposed example](../examples/chnotify.toml).
 
-Validate the entire configuration before listening: unique channel IDs, required secrets, known codecs, compatible framing/ACK combinations, positive resource bounds, and at least one enabled destination. Paths in the example resolve relative to the configuration file, not the caller's working directory.
+Validate the entire configuration before listening: unique channel IDs, required secrets, known codecs, compatible framing/ACK combinations, file record settings and exclusive destination ownership, positive resource bounds, and at least one enabled destination. Paths in the example resolve relative to the configuration file, not the caller's working directory.
 
 The initial configuration sends each accepted notification to every enabled channel. Named routing can be added later if a concrete use case needs it. Producers cannot supply arbitrary URLs or remote credentials.
 
@@ -261,3 +280,4 @@ These sources establish existing protocol and library behavior. Defaults, bounda
 - [S7: RFC 9110, idempotent methods](https://www.rfc-editor.org/rfc/rfc9110.html#section-9.2.2)
 - [S8: SQLite synchronous modes](https://sqlite.org/pragma.html#pragma_synchronous)
 - [S9: Tokio runtime configurations](https://docs.rs/tokio/latest/tokio/runtime/index.html)
+- [S10: TOML 1.1 specification](https://toml.io/en/v1.1.0)

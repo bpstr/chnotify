@@ -8,27 +8,30 @@ Status: proposed behavior; no implementation or runtime measurements yet.
 |---|---|---|
 | 1. Freeze contracts | External schema profile, codec fixtures, submission and receiver ACK grammars | Fields and message boundaries round-trip without interpretation changes |
 | 2. Durable local path | One Rust binary, config validation, sender, Unix ingress, transactional outbox | Durable ACK and admission deduplication survive crash scenarios |
-| 3. Distribution | Unix socket and HTTP adapters; auth; TSV, YAML, JSON and JSONL | Format/channel matrix and partial-success recovery pass |
+| 3. Distribution | Unix socket, HTTP and file adapters; auth; TSV, YAML, JSON, JSONL and TOML | Format/channel matrix and partial-success recovery pass |
 | 4. Reliability and footprint | Retry classification, backpressure, recovery, service lifecycle and measurements | Fault tests and documented idle/backlog benchmarks pass |
 
 Ship compiled adapters first. Add extra plugin machinery or transports only when an actual consumer requires them.
 
 ## Default end-to-end fixture
 
-Run one daemon, one Unix socket receiver, and one HTTP receiver on loopback. Bind a temporary socket path and an ephemeral HTTP port. The HTTP fixture supports no-auth, bearer, basic and a configured secret header with test-only credentials.
+Run one daemon, one Unix socket receiver, one HTTP receiver on loopback, and one dedicated log-file destination. Bind a temporary socket path, an ephemeral HTTP port, and an isolated directory for the file channel. The HTTP fixture supports no-auth, bearer, basic and a configured secret header with test-only credentials.
 
 The reliable socket fixture implements the versioned ACK protocol. Both reliable fixtures persist or otherwise deliberately model their promised acceptance and deduplicate delivery IDs. Also test a raw socket fixture whose weaker completion level is expected.
 
-Both channels receive each submitted notification. One can be unavailable while the other continues.
+All three channels receive each submitted notification. Any one can be unavailable while the others continue. The file channel completes after a durable append and explicitly permits identifiable duplicate records after a crash.
 
-The sample configuration shows JSON on HTTP and TSV on the socket. Parameterize it so the same fixture exercises all eight combinations:
+The sample configuration shows JSON on HTTP, TSV on the socket, and TOML inside RFC 5424-formatted file records. Parameterize it so the same fixture exercises all 15 combinations:
 
-| Payload format | Unix socket | HTTP |
-|---|---|---|
-| TSV profile | Required | Required |
-| YAML profile | Required | Required |
-| JSON | Required | Required |
-| JSONL | Required | Required |
+| Payload format | Unix socket | HTTP | Log file |
+|---|---|---|---|
+| TSV profile | Required | Required | Required |
+| YAML profile | Required | Required | Required |
+| JSON | Required | Required | Required |
+| JSONL | Required | Required | Required |
+| TOML | Required | Required | Required |
+
+Repeat the five file payload cases using the optional JSONL record envelope. Decode the envelope before applying the selected payload codec.
 
 For input decoding, test each supported format against the same logical-notification fixtures. All output codecs must preserve the agreed field/value model.
 
@@ -68,7 +71,7 @@ Test split and coalesced stream reads, truncated frames, oversized length prefix
 
 Cover empty versus missing values, Unicode, equals signs, tabs, LF/CR, backslashes, leading zeros, large numeric-looking strings, duplicate fields and permitted extension fields.
 
-Reject unsupported YAML structures and ambiguous scalar conversions. Verify TSV header/escape rules and JSONL's one-object-per-line profile. A format that cannot represent an admitted value causes preflight rejection, not a later silent rewrite.
+Reject unsupported YAML structures and ambiguous scalar conversions. For TOML, cover quoted literal dotted keys, multiline strings, duplicate keys, and rejection of tables, arrays, native integers, booleans and dates under the string-map profile. Verify TSV header/escape rules and JSONL's one-object-per-line profile. A format that cannot represent an admitted value causes preflight rejection, not a later silent rewrite.
 
 ### 8. Restart, shutdown and configuration
 
@@ -76,12 +79,20 @@ Restart with queued work, changed endpoints, removed channels and rotated secret
 
 Shutdown finishes or rejects admissions and leaves accepted work recoverable within a bounded deadline.
 
+### 9. Log-file records and recovery
+
+Parse the default RFC 5424 record header and reverse the file profile's escaping; recover the original payload for every codec, including TOML. Parse JSONL envelopes independently from JSONL payloads. Verify stable timestamp/identity on replay, complete-record LF framing, and no extra physical lines from payload LF/CR, tabs, NUL, escape sequences or Unicode.
+
+Inject short writes, failed sync, disk-full, and a crash after log synchronization but before outbox completion. Only a complete, synchronized record can complete a destination. A replay may add a complete duplicate with the same delivery ID; it must not concatenate onto a partial trailing record.
+
+Exercise bounded incomplete-tail repair under exclusive ownership, unexpected-corruption blocking, second-writer rejection, file creation/directory synchronization, active-file size limits, and rename-and-create rotation followed by explicit reopen. Verify replay across rotation and retention of the pending event when reopen fails. Do not claim reliable copytruncate support.
+
 ## Performance evidence
 
 Record build features, binary size, platform, kernel, filesystem, hardware, message size and channel count. Measure:
 
 - Empty idle daemon: RSS/PSS, CPU time, wakeups, threads and open files.
-- Idle after one authenticated HTTPS delivery.
+- Idle after one authenticated HTTPS delivery and one durable log-file append.
 - Steady submission and durable local acceptance latency.
 - A disconnected receiver with a growing persistent backlog.
 - Restart with the proposed maximum queue.
