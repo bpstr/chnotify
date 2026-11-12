@@ -1,13 +1,17 @@
 # Proposed configuration; the Rust implementation does not exist yet.
 # Paths are relative to this configuration file.
 # Each accepted notification goes to every configured channel.
-# Bindings/profile versions will be pinned to the dedicated schema repository.
+# RFC 0001 defines the proposed process/1 profile and CHN1 framing.
+# Freeze/pin the portable contract in the dedicated schema repository before release.
 
 [daemon]
 socket = "../runtime/chnotify.sock"
 max_message_bytes = 65536
 max_clients = 32
 accept_timeout_ms = 2048
+allowed_profiles = ["process/1"]
+peer_policy = "same-uid"
+allowed_source_ids = ["example/migration"]
 
 [outbox]
 path = "../state/outbox.sqlite3"
@@ -34,8 +38,11 @@ path = "../runtime/test-receiver.sock"
 socket_type = "stream"
 format = "tsv"
 framing = "length-prefix"
+protocol = "chn1"
 acknowledgement = "receiver"
 replay = "deduplicate"
+max_replay_age_seconds = 604800
+receiver_dedup_seconds = 604800
 request_timeout_ms = 8192
 
 [[channels]]
@@ -43,10 +50,13 @@ id = "web-monitor"
 adapter = "http"
 url = "http://127.0.0.1:8080/notifications"
 format = "json"
-acknowledgement = "response"
+endpoint_profile = "chnotify-http/1"
+acknowledgement = "native-durable"
 accepted_statuses = [204]
-# Receiver must actually honor the agreed header and deduplication contract.
+# 204 must include the RFC's matching IDs and durable receipt headers.
 replay = "deduplicate"
+max_replay_age_seconds = 604800
+receiver_dedup_seconds = 604800
 idempotency_header = "Idempotency-Key"
 connect_timeout_ms = 2048
 request_timeout_ms = 8192
@@ -75,3 +85,4 @@ max_file_bytes = 67108864
 rotation = "external-reopen"
 # Rename/create externally, then signal SIGHUP to reopen; no copytruncate.
 # Rotated-log retention is configured in the external rotation tool.
+

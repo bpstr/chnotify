@@ -2,6 +2,8 @@
 
 Status: implementation design; no file adapter exists yet.
 
+[RFC 0001](rfcs/0001-chnotify-protocol.md) defines the proposed process profile, receipt meanings and version 1 file metadata. The exact [text record](../spec/fixtures/v1/file-envelope.rfc5424) and [JSONL record](../spec/fixtures/v1/file-envelope.jsonl) are portable fixtures.
+
 The built-in `file` channel writes process notifications to a dedicated local log. Its configuration selects both a payload `format` and a log `record_format`. The payload codecs are TSV, YAML, JSON, JSONL and TOML, plus the compact key/value binding.
 
 For example, `format = "toml"` and `record_format = "rfc5424"` write a TOML notification inside a text log record. They do not make the entire log a TOML document. Appending independent TOML or YAML documents without record framing is not this adapter's contract.
@@ -14,13 +16,9 @@ Use RFC 5424 message syntax and define LF as the file record delimiter. Each com
 
 Freeze the UTC acceptance timestamp, host and source metadata with the delivery. Defaults are facility `user`, severity `informational`, app name `chnotify`, unknown process ID `-`, and message category `notification`. Explicit schema mappings may select a different severity; the adapter does not infer process health.
 
-Use `STRUCTURED-DATA = -`. Place event/delivery identity, channel, schema/profile reference, payload format and encoded payload in the message as quoted key/value pairs. This avoids inventing a syslog structured-data namespace. RFC 5424 specifies the header and structured-data rules. [F1]
+Use `STRUCTURED-DATA = -`. Place `record_version`, `source_id`, `event_id`, `delivery_id`, `channel`, `schema_profile`, `payload_format`, `mode`, and `payload` in the message as quoted key/value pairs, in that order. The record version is the string `1`; mode is `observation` or `history` and must match the accepted delivery. This avoids inventing a syslog structured-data namespace. RFC 5424 specifies the header and structured-data rules. [F1]
 
-The following is one physical line. Its IDs and profile name are illustrative, and the two-character sequences `\n` inside the payload represent embedded newlines:
-
-~~~text
-<14>1 2026-11-12T15:00:00Z localhost chnotify - notification - event_id="00000000-0000-4000-8000-000000000008" delivery_id="00000000-0000-4000-8000-000000000010" channel="local-log" schema_profile="example" payload_format="toml" payload="READY = \"1\"\nSTATUS = \"Migration started\"\n"
-~~~
+The complete [RFC 5424 fixture](../spec/fixtures/v1/file-envelope.rfc5424) is one physical line containing a valid `process/1` TOML payload. Its two-character `\n` sequences represent embedded newlines; decoding the quoted payload recovers [snapshot.toml](../spec/fixtures/v1/snapshot.toml) exactly.
 
 The file binding adds the following exact escaping rule: encode every message-field value as a quoted JSON string literal using ASCII output. Escape quotes, backslashes, control characters and non-ASCII characters; use surrogate pairs when required by that string syntax. This produces an ASCII RFC 5424 MSG and prevents newline/terminal-control injection. It does not require a JSON document or change the inner payload format. A small shared quoting routine is sufficient.
 
@@ -28,13 +26,9 @@ Header fields must satisfy the RFC's character and length rules. Reject an inval
 
 ## Optional JSONL record
 
-With `record_format = "jsonl"`, write one compact JSON object plus LF. Keep the same metadata and an escaped string containing the exact encoded payload:
+With `record_format = "jsonl"`, write one compact JSON object plus LF. Required keys are `record_version`, `timestamp`, `severity`, `host`, `app`, `process_id`, `source_id`, `event_id`, `delivery_id`, `channel`, `schema_profile`, `payload_format`, `mode`, and `payload`. `record_version` is the JSON integer `1`; unknown `process_id` is null, otherwise a string. All other values are strings. These envelope types do not alter the inner string-map protocol. The [JSONL fixture](../spec/fixtures/v1/file-envelope.jsonl) supplies a complete record.
 
-~~~json
-{"timestamp":"2026-11-12T15:00:00Z","severity":"info","host":"localhost","app":"chnotify","process_id":null,"event_id":"00000000-0000-4000-8000-000000000008","delivery_id":"00000000-0000-4000-8000-000000000010","channel":"local-log","schema_profile":"example","payload_format":"toml","payload":"READY = \"1\"\nSTATUS = \"Migration started\"\n"}
-~~~
-
-Use ASCII string escaping here too, so controls and Unicode cannot introduce ambiguous physical records. The envelope's `payload` remains a string even when the payload codec is JSON or JSONL. Consumers first decode the envelope, then apply `payload_format`. The log-envelope version must be fixed with fixtures alongside the file binding before implementation.
+Use ASCII string escaping here too, so controls and Unicode cannot introduce ambiguous physical records. The envelope's `payload` remains a string even when the payload codec is JSON or JSONL. Consumers first decode the envelope, then apply `payload_format`. The proposed log-envelope version and its fixtures must be frozen with RFC 0001 before implementation.
 
 Freeze the entire record before accepting its delivery. Retries keep the same timestamp, IDs, metadata and bytes; attempted-write times belong in distribution diagnostics.
 
@@ -79,3 +73,4 @@ There is no idle rotation polling and no reliable copytruncate mode in this desi
 - [F2: Linux fsync(2)](https://man7.org/linux/man-pages/man2/fsync.2.html)
 
 The record profile, append sequence and operational defaults are chnotify design choices. See [the acceptance plan](acceptance.md) for their required validation.
+

@@ -4,6 +4,8 @@ Status: draft for implementation review
 Date: 2026-11-12  
 Project: [bpstr/chnotify](https://github.com/bpstr/chnotify)
 
+[RFC 0001](rfcs/0001-chnotify-protocol.md) now supplies the proposed semantic profile, exact codec bindings and wire grammars. It takes precedence over provisional details below. The RFC remains a draft; implementation and measured guarantees are subsequent work.
+
 ## 1. Purpose and scope
 
 **chnotify means channel notify. It is a small Rust notification distributor.**
@@ -62,17 +64,17 @@ A successful `chnotify send` means **the local daemon owns a durable pending not
 
 If the daemon is unavailable, the request is invalid, the queue is full, or persistence fails, the sender returns a clear failure. A local timeout is an unknown outcome: acceptance might have happened before the reply was lost.
 
-The CLI creates one event ID per invocation and reuses it during any internal submission retry. It also accepts `--id` so a producer can retry the same logical notification across invocations. An SDK retains the ID until acceptance is known.
+The CLI creates an event ID for a new inline observation when none is supplied, and reuses it during internal submission retries. Explicit `--id` and complete `--input` records preserve their existing identities so a producer can retry across invocations. The original sequence, observation time, mode and fields must also remain unchanged. An SDK retains the ID until acceptance is known, within the bounded admission replay window defined by RFC 0001.
 
-Deduplicate submissions by authenticated local producer identity and event ID. Identical retries return the original acceptance result; the same ID with different normalized content fails. Resolve a duplicate before re-evaluating current routing, so a configuration change cannot expand an old submission.
+Deduplicate submissions by authenticated local principal, source ID and event ID. Identical retries return the original acceptance facts with the duplicate flag set; the same ID with different normalized content fails. Resolve a duplicate before checking new-work capacity or re-evaluating current routing, so a full queue can still acknowledge owned work and a configuration change cannot expand an old submission.
 
-Keep completion tombstones for a configured deduplication window and retain IDs for all pending or failed records. A duplicate after that window can be admitted again; document this limit instead of promising indefinite deduplication.
+Keep completion tombstones for a configured deduplication window and retain IDs for all pending or failed records. A duplicate after that window can be admitted again; document this limit instead of promising indefinite deduplication. Destination replay has a separate horizon: RFC 0001 requires automatic deduplicated retries to stop and remain inspectable before the receiver's duplicate-retention promise expires.
 
 ## 4. Local socket and systemd relationship
 
 Use a Unix stream socket for the reliable submission API. Frame each request and reply with a four-byte network-order length, followed by a versioned body. Bound the length before allocation. The request body carries the event ID, schema/profile reference, input codec and payload; the reply carries the same ID and a structured acceptance or error result.
 
-The exact body grammar must be frozen alongside its fixtures before the sender and daemon are implemented. It can use a compact binary envelope without making JSON mandatory. This is a local transport envelope, separate from the process-notification schema.
+RFC 0001 specifies the `CHN1` body: four magic octets, a type octet, a two-octet metadata length, ASCII metadata, and the selected payload. Its portable byte fixtures must be frozen before implementation. This local transport envelope does not require JSON and is separate from the process-notification schema.
 
 Use a dedicated `CHNOTIFY_SOCKET` setting. Authenticate local peers using socket ownership/permissions and platform peer credentials; assign an explicit owner for administrative operations. Restrict queued files to the daemon owner.
 
@@ -88,7 +90,7 @@ Unix datagrams preserve message boundaries; streams require framing. [S2] Length
 
 ## 5. Schema and format bindings
 
-Propose a deliberately small first schema profile: a flat map from field names to UTF-8 strings. The specification repository owns the final decision and the lexical rules for numeric or boolean-like values.
+RFC 0001 proposes `process/1`, a flat map from uppercase field names to UTF-8 strings, with explicit identity, complete snapshots, lifecycle, activity, attention, progress, terminal outcomes and freshness leases. The dedicated specification repository will own the frozen profile and conformance fixtures.
 
 For that profile, `"0008"`, `"8"`, an empty string, and an absent field remain distinct. JSON/YAML/TOML emit string scalars; a codec must not infer types from appearances. If a future schema needs nested or typed data, introduce versioned bindings together.
 
@@ -103,7 +105,7 @@ For that profile, `"0008"`, `"8"`, an empty string, and an absent field remain d
 
 All five required codecs also work as payloads inside a file log record. The file adapter applies its own record envelope and escaping; multiline documents are never appended as an unframed stream.
 
-For TSV, propose a `key<TAB>value` header followed by one row per field. Define the profile's escaping for backslash, tab, LF, CR, and empty values, and require a round trip. The historical TSV registration specifies a header and consistent columns and excludes literal tabs in a field; escaping and empty-value handling therefore need an explicit profile. [S3]
+For TSV, RFC 0001 defines a `key<TAB>value` header, one row per field, escapes for backslash/TAB/LF/CR, and `\e` for an empty value. The historical TSV registration specifies a header and consistent columns and excludes literal tabs in a field; those added semantics are an explicit project binding. [S3]
 
 For YAML, reject duplicate keys, aliases, custom tags, nested collections, and unsupported scalar forms under this profile. Quote generated string values. YAML has a broader data model than the proposed notification profile. [S4]
 
@@ -111,7 +113,7 @@ For TOML, use the TOML 1.1 syntax with a restricted root-level string-map profil
 
 JSONL reuses the JSON codec; it is not a separate semantic schema. Its convention is one JSON value per line. [S5] The HTTP adapter sends one event per request initially, including for JSONL; batch delivery can wait.
 
-The key/value binding splits on the first equals sign. Reject values that cannot be represented by its agreed grammar, rather than inventing an escape convention and calling it systemd-compatible.
+The key/value binding splits on the first equals sign, preserves literal quotes/backslashes and requires LF-terminated lines. Decoded CR/LF values are unrepresentable and fail preflight for a KV channel. It does not introduce a systemd escape convention.
 
 Input format and each output format are independently selected. Detect unsupported conversions before acceptance. Preserve permitted extension fields and reject duplicate fields rather than silently choosing a value. Exact key rules, required fields and codec fixtures belong in the schema repository.
 
@@ -155,7 +157,7 @@ Support configurable no-auth, bearer token, basic authentication and custom secr
 
 Use TLS verification for HTTPS. Disable automatic redirects by default so a URL change cannot silently change the destination or credential recipient. Plain HTTP is useful for loopback testing and explicitly configured trusted local endpoints.
 
-Configure which success responses constitute acceptance. The fixture endpoint returns 204 only after recording the event. A 2xx response means whatever the endpoint contract promises; it is not universal proof of durable storage.
+Configure which success responses constitute acceptance. The native RFC 0001 fixture endpoint returns 204 with matching identity, durable-receipt and deduplication headers only after recording the event. Generic endpoints may use another explicit response-only contract. A 2xx response alone is not universal proof of durable storage.
 
 A receiver supporting durable replay must deduplicate the stable delivery ID, carried in an agreed idempotency header. The presence of that header alone does not make a generic endpoint idempotent. RFC 9110 requires knowledge of safe replay before retrying a non-idempotent request after an uncertain outcome. [S7]
 
@@ -257,13 +259,13 @@ The initial configuration sends each accepted notification to every enabled chan
 
 Existing queued work uses its original destination and format snapshot after restart. Configuring a new channel affects new submissions only.
 
-## 12. Decisions to finish before implementation
+## 12. Protocol freeze and implementation gates
 
-The architectural defaults above are the proposal. Three concrete contracts must be finalized as part of the first implementation milestone:
+The architectural defaults above remain a proposal. RFC 0001 now makes the previously open contracts concrete; the first milestone must review, freeze and qualify them:
 
-1. The dedicated schema repository, first profile/version, lexical value rules, TSV escaping profile and shared fixtures.
-2. The exact local submission and acknowledged-socket wire grammars, with positive and negative byte fixtures.
-3. The receiver replay/ACK contracts and the resource budgets measured on the first supported Linux targets.
+1. Extract the proposed `process/1` field model, codec rules and shared fixtures into the dedicated specification repository, whose name remains undecided.
+2. Freeze `CHN1` submission/receipt frames and the native HTTP receipt contract; exercise positive and negative fixtures across independent implementations.
+3. Verify replay horizons, terminal finality, freshness and attention semantics, then measure resource budgets on the first supported Linux targets.
 
 These contracts keep schema, format and delivery separate while making the v0.1 implementation testable. The [acceptance plan](acceptance.md) defines the required behaviors.
 
@@ -281,3 +283,4 @@ These sources establish existing protocol and library behavior. Defaults, bounda
 - [S8: SQLite synchronous modes](https://sqlite.org/pragma.html#pragma_synchronous)
 - [S9: Tokio runtime configurations](https://docs.rs/tokio/latest/tokio/runtime/index.html)
 - [S10: TOML 1.1 specification](https://toml.io/en/v1.1.0)
+

@@ -2,6 +2,8 @@
 
 Status: proposed behavior; no implementation or runtime measurements yet.
 
+[RFC 0001](rfcs/0001-chnotify-protocol.md) is the proposed normative contract. The [portable fixtures](../spec/fixtures/v1/README.md) supply representative codec/wire values and reducer scenarios; passing those examples alone is not full implementation conformance. See also the [runner integration qualification](integrations/runners-and-monitors.md).
+
 ## Milestones
 
 | Milestone | Deliverable | Gate |
@@ -87,6 +89,18 @@ Inject short writes, failed sync, disk-full, and a crash after log synchronizati
 
 Exercise bounded incomplete-tail repair under exclusive ownership, unexpected-corruption blocking, second-writer rejection, file creation/directory synchronization, active-file size limits, and rename-and-create rotation followed by explicit reopen. Verify replay across rotation and retention of the pending event when reopen fails. Do not claim reliable copytruncate support.
 
+### 10. Process projection, freshness and migration
+
+Verify complete-snapshot replacement, including clearing omitted optional fields and extensions. Exercise missed sequences, duplicate event IDs, changed content under an existing ID, sequence reuse, backward lifecycle transitions, and first terminal arrival below a nonterminal high-water sequence. A previously occupied sequence remains a conflict. A terminal outcome cannot be overwritten or reopened by a later event.
+
+Test heartbeat delivery before and after its original expiry, replay in history mode, an unleased snapshot, excessive future timestamps, a wall-clock rollback, and receiver restart without a reconstructible monotonic deadline. Duplicate receipts and backlog flush must not grant a new lease. Lost contact must not invent a terminal result.
+
+Verify expiration of live attention and persistence/dismissal of review-scoped attention independently of outcome. Test `completed`, `needs_attention`, `deferred`, `cancelled`, `failed` and known-ended `unknown` results; a successful task or exit code alone cannot complete a run.
+
+Exercise automatic replay-window expiry and receiver deduplication promises. Retain work as blocked rather than silently replaying past the advertised safe horizon. Verify local-source authorization separately from claimed source names, and reject missing or mismatched native HTTP receipt headers.
+
+Capture representative runner lifecycle fixtures without changing task execution or invoking models. Keep the strict existing monitor endpoint separate until a new endpoint or complete legacy projection is qualified; verify one publisher and one sequence authority during handover.
+
 ## Performance evidence
 
 Record build features, binary size, platform, kernel, filesystem, hardware, message size and channel count. Measure:
@@ -101,3 +115,4 @@ Record build features, binary size, platform, kernel, filesystem, hardware, mess
 Confirm no application polling or background network traffic with an empty queue. Compare idle and backlog memory to detect accidental in-memory mirroring.
 
 A useful initial run can use 65,536 notifications, a 64 KiB message boundary and eight delivery slots, varying one factor at a time. Publish the measured results before adopting a memory or throughput promise.
+

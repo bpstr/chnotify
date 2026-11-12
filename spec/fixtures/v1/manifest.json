@@ -1,0 +1,99 @@
+{
+  "profile": "process/1",
+  "framing": "CHN1",
+  "mode": "observation",
+  "canonical_event": "snapshot.json",
+  "canonical_map_octets": 551,
+  "content_sha256": "61ff858a75bab3ace70d8a375bd0e41f0d97a36f4f5ee402ee31afa0900d5d51",
+  "equivalent_payloads": [
+    "snapshot.json",
+    "snapshot.jsonl",
+    "snapshot.yaml",
+    "snapshot.toml",
+    "snapshot.tsv",
+    "snapshot.kv"
+  ],
+  "escaped_equivalent_payloads": [
+    "escaped.json",
+    "escaped.jsonl",
+    "escaped.yaml",
+    "escaped.toml",
+    "escaped.tsv"
+  ],
+  "escaped_kv": "unrepresentable: decoded TAB is allowed but LF/CR are not representable by kv",
+  "frames": {
+    "submit-toml": {
+      "type": 1,
+      "metadata": {
+        "event-id": "00000000-0000-4000-8000-000000000008",
+        "profile": "process/1",
+        "codec": "toml",
+        "mode": "observation"
+      },
+      "frame_octets": 642,
+      "payload_file": "snapshot.toml",
+      "sha256": "5df03595be2a1026651865f43728591752b7f16e30ea04ea69eef9afdede8c65"
+    },
+    "accepted": {
+      "type": 2,
+      "metadata": {
+        "event-id": "00000000-0000-4000-8000-000000000008",
+        "accepted-at": "2026-11-12T15:00:01.000Z",
+        "dedup-until": "2026-11-13T15:00:01.000Z",
+        "duplicate": "0"
+      },
+      "frame_octets": 143,
+      "payload_file": null,
+      "sha256": "5c7d8a1454f80a1d458d053d69d1d116a70755241cac597d09499a6bb6cc9e26"
+    },
+    "deliver-toml": {
+      "type": 4,
+      "metadata": {
+        "event-id": "00000000-0000-4000-8000-000000000008",
+        "delivery-id": "00000000-0000-4000-8000-000000000010",
+        "profile": "process/1",
+        "codec": "toml",
+        "mode": "observation"
+      },
+      "frame_octets": 691,
+      "payload_file": "snapshot.toml",
+      "sha256": "70891a944fda2fe19c204974847d711e7a1097e74644b0c14a38e4239ddbc712"
+    },
+    "delivered": {
+      "type": 5,
+      "metadata": {
+        "event-id": "00000000-0000-4000-8000-000000000008",
+        "delivery-id": "00000000-0000-4000-8000-000000000010",
+        "receipt": "durable",
+        "dedup-until": "2026-11-19T15:00:02.000Z",
+        "duplicate": "0",
+        "applied": "1"
+      },
+      "frame_octets": 181,
+      "payload_file": null,
+      "sha256": "99c0af7c49bc25b971b2106d1e0f9fef57ed01300894c3eada96ba017ba58a9c"
+    },
+    "queue-full": {
+      "type": 3,
+      "metadata": {
+        "code": "queue-full",
+        "event-id": "00000000-0000-4000-8000-000000000008",
+        "retry-after-ms": "256"
+      },
+      "frame_octets": 92,
+      "payload_file": null,
+      "sha256": "dde09e3e01ad6440e94f030e2edf22c7ff84679bfe7ec1bc9f65b5d8eb009622"
+    }
+  },
+  "invalid_frames": [
+    "invalid-short-length.frame.hex",
+    "invalid-oversize-length.frame.hex",
+    "invalid-truncated-submit.frame.hex",
+    "invalid-metadata-overrun.frame.hex"
+  ],
+  "file_records": [
+    "file-envelope.jsonl",
+    "file-envelope.rfc5424"
+  ],
+  "projection_scenarios": 14
+}
