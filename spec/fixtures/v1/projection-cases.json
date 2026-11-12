@@ -1,0 +1,841 @@
+{
+  "profile": "process/1",
+  "clock_confidence_default": true,
+  "base_time": "2026-11-12T15:00:00.000Z",
+  "scenarios": [
+    {
+      "name": "duplicate-does-not-renew-contact",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "freshness": "fresh",
+            "deadline_mono_ms": 64000
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:32.000Z",
+          "received_mono_ms": 32000,
+          "expected": {
+            "duplicate": true,
+            "deadline_mono_ms": 64000
+          }
+        },
+        {
+          "advance_mono_ms": 64000,
+          "expected": {
+            "freshness": "stale"
+          }
+        }
+      ]
+    },
+    {
+      "name": "delayed-observation-is-stale",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:02:08.000Z",
+          "received_mono_ms": 128000,
+          "expected": {
+            "applied": true,
+            "freshness": "stale"
+          }
+        }
+      ]
+    },
+    {
+      "name": "history-cannot-establish-contact",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "history",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "applied": true,
+            "freshness": "unknown"
+          }
+        }
+      ]
+    },
+    {
+      "name": "newer-snapshot-clears-optional-fields",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀",
+            "TASK_ID": "T128"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "current_task": "T128"
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000010",
+            "KIND": "snapshot",
+            "OBSERVED_AT": "2026-11-12T15:00:16.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "16",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:16.000Z",
+          "received_mono_ms": 16000,
+          "expected": {
+            "current_task": null,
+            "freshness": "unknown",
+            "absent_fields": [
+              "X_EXAMPLE_EMPTY"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "older-event-cannot-replace-state",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000010",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:16.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "16",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:16.000Z",
+          "received_mono_ms": 16000,
+          "expected": {
+            "highwater": 16
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "waiting",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:32.000Z",
+          "received_mono_ms": 32000,
+          "expected": {
+            "applied": false,
+            "activity": "working",
+            "highwater": 16
+          }
+        }
+      ]
+    },
+    {
+      "name": "terminal-is-final",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "idle",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000010",
+            "KIND": "terminal",
+            "OBSERVED_AT": "2026-11-12T15:00:16.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "16",
+            "SOURCE_ID": "example/migration",
+            "STATE": "finished",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀",
+            "RESULT": "completed"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:16.000Z",
+          "received_mono_ms": 16000,
+          "expected": {
+            "state": "finished",
+            "result": "completed",
+            "freshness": "ended"
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000020",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:32.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "32",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:32.000Z",
+          "received_mono_ms": 32000,
+          "expected": {
+            "applied": false,
+            "state": "finished",
+            "result": "completed"
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "idle",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000040",
+            "KIND": "terminal",
+            "OBSERVED_AT": "2026-11-12T15:01:04.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "64",
+            "SOURCE_ID": "example/migration",
+            "STATE": "finished",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀",
+            "RESULT": "failed"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:01:04.000Z",
+          "received_mono_ms": 64000,
+          "expected": {
+            "conflict": "state-conflict",
+            "result": "completed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "unseen-lower-terminal-freezes-outcome",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000010",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:16.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "16",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:16.000Z",
+          "received_mono_ms": 16000,
+          "expected": {
+            "highwater": 16
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "idle",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "terminal",
+            "OBSERVED_AT": "2026-11-12T15:00:08.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "finished",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀",
+            "RESULT": "completed"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:32.000Z",
+          "received_mono_ms": 32000,
+          "expected": {
+            "applied": true,
+            "state": "finished",
+            "terminal_seq": 8,
+            "highwater": 16,
+            "diagnostic": "post-terminal-observation"
+          }
+        }
+      ]
+    },
+    {
+      "name": "occupied-sequence-rejects-terminal",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000010",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:16.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "16",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:16.000Z",
+          "received_mono_ms": 16000,
+          "expected": {
+            "highwater": 16
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "idle",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000020",
+            "KIND": "terminal",
+            "OBSERVED_AT": "2026-11-12T15:00:32.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "16",
+            "SOURCE_ID": "example/migration",
+            "STATE": "finished",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀",
+            "RESULT": "completed"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:32.000Z",
+          "received_mono_ms": 32000,
+          "expected": {
+            "applied": false,
+            "conflict": "sequence-conflict",
+            "state": "running"
+          }
+        }
+      ]
+    },
+    {
+      "name": "same-event-id-changed-content-conflicts",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "applied": true
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Changed",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:16.000Z",
+          "received_mono_ms": 16000,
+          "expected": {
+            "applied": false,
+            "conflict": "id-conflict"
+          }
+        }
+      ]
+    },
+    {
+      "name": "backward-lifecycle-conflicts",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "state": "running"
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000010",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:16.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "16",
+            "SOURCE_ID": "example/migration",
+            "STATE": "starting",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:16.000Z",
+          "received_mono_ms": 16000,
+          "expected": {
+            "applied": false,
+            "conflict": "state-conflict",
+            "state": "running"
+          }
+        }
+      ]
+    },
+    {
+      "name": "future-clock-invalidates-contact-only",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:16.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "applied": true,
+            "freshness": "unknown",
+            "state": "running"
+          }
+        }
+      ]
+    },
+    {
+      "name": "live-attention-expires",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "waiting",
+            "ATTENTION": "blocker",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀",
+            "ATTENTION_SCOPE": "live",
+            "ATTENTION_ID": "T128-blocker"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "attention_actionable": true,
+            "freshness": "fresh"
+          }
+        },
+        {
+          "advance_mono_ms": 64000,
+          "expected": {
+            "attention_actionable": false,
+            "freshness": "stale",
+            "last_attention": "blocker"
+          }
+        }
+      ]
+    },
+    {
+      "name": "terminal-review-survives-contact-expiry",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "idle",
+            "ATTENTION": "review",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "terminal",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "finished",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀",
+            "RESULT": "needs_attention",
+            "ATTENTION_SCOPE": "review",
+            "ATTENTION_ID": "review-8"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "freshness": "ended",
+            "reviewable": true
+          }
+        },
+        {
+          "advance_mono_ms": 128000,
+          "expected": {
+            "reviewable": true,
+            "freshness": "ended"
+          }
+        }
+      ]
+    },
+    {
+      "name": "clock-rollback-cannot-revive-contact",
+      "steps": [
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T15:00:00.000Z",
+          "received_mono_ms": 0,
+          "expected": {
+            "deadline_mono_ms": 64000
+          }
+        },
+        {
+          "advance_mono_ms": 64000,
+          "expected": {
+            "freshness": "stale"
+          }
+        },
+        {
+          "wall_clock_ms": -32000,
+          "mono_ms": 64000,
+          "clock_confidence": false,
+          "expected": {
+            "freshness": "unknown",
+            "not_fresh": true
+          }
+        },
+        {
+          "event": {
+            "ACTIVITY": "working",
+            "ATTENTION": "none",
+            "EVENT_ID": "00000000-0000-4000-8000-000000000008",
+            "KIND": "snapshot",
+            "LEASE_MS": "64000",
+            "OBSERVED_AT": "2026-11-12T15:00:00.000Z",
+            "PROGRESS_CURRENT": "8",
+            "PROGRESS_SCOPE": "migration",
+            "PROGRESS_TOTAL": "16",
+            "PROGRESS_UNIT": "batches",
+            "RUN_ID": "0123456789abcdef01234567",
+            "SEQ": "8",
+            "SOURCE_ID": "example/migration",
+            "STATE": "running",
+            "STATUS": "Processing batch 8 of 16",
+            "VERSION": "1",
+            "X_EXAMPLE_EMPTY": "",
+            "X_EXAMPLE_LITERAL": "path=C:\\work; quote=\"ready\"; value=a=b",
+            "X_EXAMPLE_UNICODE": "Budapest — 🚀"
+          },
+          "mode": "observation",
+          "received_at": "2026-11-12T14:59:44.000Z",
+          "received_mono_ms": 64001,
+          "expected": {
+            "duplicate": true,
+            "not_fresh": true
+          }
+        }
+      ]
+    }
+  ]
+}

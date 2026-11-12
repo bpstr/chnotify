@@ -1,0 +1,100 @@
+{
+  "base": "snapshot.json",
+  "cases": [
+    {
+      "name": "native-number",
+      "file": "invalid-native-number.json",
+      "reason": "All values must be strings"
+    },
+    {
+      "name": "duplicate-key",
+      "file": "invalid-duplicate-key.json",
+      "reason": "Duplicate fields are rejected before projection"
+    },
+    {
+      "name": "unknown-tsv-escape",
+      "file": "invalid-tsv-escape.tsv",
+      "reason": "Unknown TSV escape"
+    },
+    {
+      "name": "leading-zero-sequence",
+      "set": {
+        "SEQ": "08"
+      },
+      "reason": "Noncanonical positive integer"
+    },
+    {
+      "name": "nonterminal-result",
+      "set": {
+        "RESULT": "completed"
+      },
+      "reason": "Result is terminal-only"
+    },
+    {
+      "name": "heartbeat-without-lease",
+      "set": {
+        "KIND": "heartbeat"
+      },
+      "remove": [
+        "LEASE_MS"
+      ],
+      "reason": "Heartbeat requires lease"
+    },
+    {
+      "name": "terminal-without-result",
+      "set": {
+        "KIND": "terminal",
+        "STATE": "finished",
+        "ACTIVITY": "idle"
+      },
+      "remove": [
+        "LEASE_MS"
+      ],
+      "reason": "Terminal requires result"
+    },
+    {
+      "name": "terminal-live-attention",
+      "set": {
+        "KIND": "terminal",
+        "STATE": "finished",
+        "ACTIVITY": "idle",
+        "RESULT": "failed",
+        "ATTENTION": "input",
+        "ATTENTION_ID": "input-8",
+        "ATTENTION_SCOPE": "live"
+      },
+      "remove": [
+        "LEASE_MS"
+      ],
+      "reason": "Ended run cannot request live intervention"
+    },
+    {
+      "name": "unknown-core-field",
+      "set": {
+        "READYY": "1"
+      },
+      "reason": "Unknown non-extension field"
+    },
+    {
+      "name": "progress-exceeds-total",
+      "set": {
+        "PROGRESS_CURRENT": "32"
+      },
+      "reason": "Current exceeds total"
+    },
+    {
+      "name": "status-control",
+      "set": {
+        "STATUS": "Line one\nLine two"
+      },
+      "reason": "STATUS is single-line text"
+    },
+    {
+      "name": "oversize-lease",
+      "set": {
+        "LEASE_MS": "256001"
+      },
+      "reason": "Exceeds lease bound"
+    }
+  ]
+}
